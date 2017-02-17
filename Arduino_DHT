@@ -62,7 +62,7 @@ void loop()
     int temperatura = int(temperature);
     //printing via serial
     Serial.print(temperatura); Serial.print(" *C, ");
-    replyPacekt = char(temperatura)
+    replyPacekt = temperatura;
     //send packet via UDP port
     Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
     Udp.write(replyPacekt);
