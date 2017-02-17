@@ -1,0 +1,73 @@
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
+#include <SimpleDHT.h>
+
+int pinDHT11 = D3;
+
+const char* ssid = "ImWatchingYou";
+const char* password = "99194213";
+
+WiFiUDP Udp;
+unsigned int localUdpPort = 4210;  // local port to listen on
+char incomingPacket[255];  // buffer for incoming packets
+char replyPacekt;
+
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println();
+  pinMode(2, OUTPUT);
+  Serial.printf("Connecting to %s ", ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println(" connected");
+
+  Udp.begin(localUdpPort);
+  Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
+}
+
+
+void loop()
+{
+  byte temperature = 0;
+  byte humidity = 0;
+  int packetSize = Udp.parsePacket();
+  int value;
+
+  if (packetSize)
+  {
+    // receive incoming UDP packets
+    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+    int len = Udp.read(incomingPacket, 255);
+    if (len > 0)
+    {
+      incomingPacket[len] = 0;
+    }
+    value = int(incomingPacket);
+    Serial.println(value);
+
+    Serial.printf("UDP packet contents: %s\n", incomingPacket);
+    if (simple_dht11_read(pinDHT11, &temperature, &humidity, NULL)) {
+      Serial.print("Read DHT11 failed.");
+      return;
+    }
+    
+//read the temperature and print via Serial and UDP ports
+    //converting the temperature byte array to an int, and then, to char array
+    int temperatura = int(temperature);
+    //printing via serial
+    Serial.print(temperatura); Serial.print(" *C, ");
+    replyPacekt = char(temperatura)
+    //send packet via UDP port
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    Udp.write(replyPacekt);
+    Udp.endPacket();
+//
+    delay(1000);
+  }
+}
